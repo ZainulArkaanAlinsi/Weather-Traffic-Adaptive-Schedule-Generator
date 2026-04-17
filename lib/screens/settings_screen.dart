@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
+import 'package:animate_do/animate_do.dart';
 import '../providers/app_provider.dart';
 import '../models/settings.dart';
 import '../utils/constants.dart';
@@ -29,24 +30,12 @@ class _SettingsScreenState extends State<SettingsScreen> {
   void initState() {
     super.initState();
     final settings = context.read<AppProvider>().settings;
-    _cityController = TextEditingController(
-      text: settings?.cityName ?? 'Jakarta',
-    );
-    _homeLocationController = TextEditingController(
-      text: settings?.homeLocation ?? 'Jakarta',
-    );
-    _openWeatherKeyController = TextEditingController(
-      text: settings?.apiKeyOpenWeather ?? '',
-    );
-    _googleMapsKeyController = TextEditingController(
-      text: settings?.apiKeyGoogleMaps ?? '',
-    );
-    _geminiKeyController = TextEditingController(
-      text: settings?.apiKeyGemini ?? '',
-    );
-    _breakDurationController = TextEditingController(
-      text: (settings?.preferredBreakDuration ?? 60).toString(),
-    );
+    _cityController = TextEditingController(text: settings?.cityName ?? 'Jakarta');
+    _homeLocationController = TextEditingController(text: settings?.homeLocation ?? 'Jakarta');
+    _openWeatherKeyController = TextEditingController(text: settings?.apiKeyOpenWeather ?? '');
+    _googleMapsKeyController = TextEditingController(text: settings?.apiKeyGoogleMaps ?? '');
+    _geminiKeyController = TextEditingController(text: settings?.apiKeyGemini ?? '');
+    _breakDurationController = TextEditingController(text: (settings?.preferredBreakDuration ?? 60).toString());
 
     if (settings != null) {
       _wakeUpTime = settings.wakeUpTime;
@@ -71,98 +60,70 @@ class _SettingsScreenState extends State<SettingsScreen> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
+      backgroundColor: AppColors.background,
       body: Stack(
         children: [
-          Container(
-            decoration: BoxDecoration(
-              gradient: LinearGradient(
-                colors: [const Color(0xFF1E3A5F), const Color(0xFF0D253F)],
-                begin: Alignment.topLeft,
-                end: Alignment.bottomRight,
-              ),
-            ),
-          ),
+          _buildBackgroundDecorations(),
           SafeArea(
             child: Column(
               children: [
-                _buildHeader(),
+                _buildHeader(context),
                 Expanded(
                   child: SingleChildScrollView(
-                    padding: const EdgeInsets.all(20),
+                    physics: const BouncingScrollPhysics(),
+                    padding: const EdgeInsets.symmetric(horizontal: 24),
                     child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
-                        _buildSectionTitle('Location Settings'),
-                        const SizedBox(height: 16),
-                        _buildTextField(
-                          controller: _cityController,
-                          label: 'City (for weather)',
-                          hint: 'Jakarta',
-                          icon: Icons.location_city_rounded,
-                        ),
-                        const SizedBox(height: 12),
-                        _buildTextField(
-                          controller: _homeLocationController,
-                          label: 'Home Address',
-                          hint: 'Jakarta Selatan',
-                          icon: Icons.home_rounded,
+                        FadeInDown(
+                          duration: const Duration(milliseconds: 500),
+                          child: _buildSection('Location', [
+                            _buildTextField(_cityController, 'Target City', Icons.location_city_rounded),
+                            const SizedBox(height: 16),
+                            _buildTextField(_homeLocationController, 'Home Address', Icons.home_rounded),
+                          ]),
                         ),
                         const SizedBox(height: 24),
-                        _buildSectionTitle('Schedule Settings'),
-                        const SizedBox(height: 16),
-                        _buildTimeRow(
-                          'Wake Up Time',
-                          _wakeUpTime,
-                          Icons.wb_sunny_rounded,
-                          (time) => setState(() => _wakeUpTime = time),
-                        ),
-                        _buildTimeRow(
-                          'Work Start',
-                          _workStartTime,
-                          Icons.work_rounded,
-                          (time) => setState(() => _workStartTime = time),
-                        ),
-                        _buildTimeRow(
-                          'Work End',
-                          _workEndTime,
-                          Icons.work_off_rounded,
-                          (time) => setState(() => _workEndTime = time),
-                        ),
-                        _buildTimeRow(
-                          'Break Start',
-                          _breakStartTime,
-                          Icons.coffee_rounded,
-                          (time) => setState(() => _breakStartTime = time),
+                        FadeInDown(
+                          delay: const Duration(milliseconds: 100),
+                          duration: const Duration(milliseconds: 500),
+                          child: _buildSection('Schedule Preferences', [
+                            _buildTimePickerTile('Wake Up', _wakeUpTime, Icons.wb_sunny_rounded, 
+                                (t) => setState(() => _wakeUpTime = t)),
+                            _buildTimePickerTile('Work Starts', _workStartTime, Icons.work_rounded, 
+                                (t) => setState(() => _workStartTime = t)),
+                            _buildTimePickerTile('Work Ends', _workEndTime, Icons.work_off_rounded, 
+                                (t) => setState(() => _workEndTime = t)),
+                            _buildTimePickerTile('Preferred Break', _breakStartTime, Icons.coffee_rounded, 
+                                (t) => setState(() => _breakStartTime = t)),
+                          ]),
                         ),
                         const SizedBox(height: 24),
-                        _buildSectionTitle('API Keys'),
-                        const SizedBox(height: 16),
-                        _buildTextField(
-                          controller: _openWeatherKeyController,
-                          label: 'OpenWeatherMap API Key',
-                          hint: 'Enter API key',
-                          icon: Icons.cloud_rounded,
-                        ),
-                        const SizedBox(height: 12),
-                        _buildTextField(
-                          controller: _googleMapsKeyController,
-                          label: 'Google Maps API Key',
-                          hint: 'Enter API key',
-                          icon: Icons.map_rounded,
-                        ),
-                        const SizedBox(height: 12),
-                        _buildTextField(
-                          controller: _geminiKeyController,
-                          label: 'Gemini AI API Key (Required for AI Scheduler)',
-                          hint: 'Enter Gemini API key',
-                          icon: Icons.auto_awesome_rounded,
+                        FadeInDown(
+                          delay: const Duration(milliseconds: 200),
+                          duration: const Duration(milliseconds: 500),
+                          child: _buildSection('API Integrations', [
+                            _buildTextField(_geminiKeyController, 'Gemini AI Key (Required)', Icons.auto_awesome_rounded, isPassword: true),
+                            const SizedBox(height: 16),
+                            _buildTextField(_openWeatherKeyController, 'OpenWeather Key', Icons.cloud_rounded, isPassword: true),
+                            const SizedBox(height: 16),
+                            _buildTextField(_googleMapsKeyController, 'Google Maps Key', Icons.map_rounded, isPassword: true),
+                          ]),
                         ),
                         const SizedBox(height: 24),
-                        _buildSectionTitle('Notifications'),
-                        const SizedBox(height: 16),
-                        _buildNotificationToggle(),
-                        const SizedBox(height: 32),
-                        _buildSaveButton(),
+                        FadeInDown(
+                          delay: const Duration(milliseconds: 300),
+                          duration: const Duration(milliseconds: 500),
+                          child: _buildSection('App Settings', [
+                            _buildToggleTile('Push Notifications', _notificationsEnabled, Icons.notifications_active_rounded, 
+                                (v) => setState(() => _notificationsEnabled = v)),
+                          ]),
+                        ),
+                        const SizedBox(height: 40),
+                        FadeInUp(
+                          delay: const Duration(milliseconds: 400),
+                          child: _buildSaveButton(),
+                        ),
+                        const SizedBox(height: 40),
                       ],
                     ),
                   ),
@@ -175,165 +136,131 @@ class _SettingsScreenState extends State<SettingsScreen> {
     );
   }
 
-  Widget _buildHeader() {
+  Widget _buildBackgroundDecorations() {
+    return Stack(
+      children: [
+        Positioned(
+          top: -100,
+          right: -100,
+          child: Container(
+            width: 300,
+            height: 300,
+            decoration: BoxDecoration(
+              shape: BoxShape.circle,
+              gradient: RadialGradient(
+                colors: [AppColors.primary.withOpacity(0.1), Colors.transparent],
+              ),
+            ),
+          ),
+        ),
+      ],
+    );
+  }
+
+  Widget _buildHeader(BuildContext context) {
     return Padding(
       padding: const EdgeInsets.all(16),
       child: Row(
+        mainAxisAlignment: MainAxisAlignment.spaceBetween,
         children: [
           IconButton(
             onPressed: () => Navigator.pop(context),
-            icon: const Icon(Icons.arrow_back, color: Colors.white),
-          ),
-          const Expanded(
-            child: Text(
-              'Settings',
-              style: TextStyle(
-                color: Colors.white,
-                fontSize: 20,
-                fontWeight: FontWeight.bold,
+            icon: Container(
+              padding: const EdgeInsets.all(8),
+              decoration: BoxDecoration(
+                color: AppColors.surface,
+                borderRadius: BorderRadius.circular(12),
+                border: Border.all(color: AppColors.glassBorder),
               ),
-              textAlign: TextAlign.center,
+              child: const Icon(Icons.arrow_back_ios_new_rounded, color: Colors.white, size: 20),
             ),
           ),
-          const SizedBox(width: 48),
+          Text('Settings', style: AppTextStyles.heading2.copyWith(fontSize: 20)),
+          const SizedBox(width: 48), // Placeholder for balance
         ],
       ),
     );
   }
 
-  Widget _buildSectionTitle(String title) {
-    return Row(
-      children: [
-        Container(
-          padding: const EdgeInsets.all(8),
-          decoration: BoxDecoration(
-            color: AppColors.primary.withValues(alpha: 0.2),
-            borderRadius: BorderRadius.circular(8),
-          ),
-          child: Icon(
-            _getSectionIcon(title),
-            color: AppColors.primary,
-            size: 20,
-          ),
-        ),
-        const SizedBox(width: 12),
-        Text(
-          title,
-          style: const TextStyle(
-            color: Colors.white,
-            fontSize: 18,
-            fontWeight: FontWeight.bold,
-          ),
-        ),
-      ],
-    );
-  }
-
-  IconData _getSectionIcon(String title) {
-    if (title.contains('Location')) return Icons.location_on_rounded;
-    if (title.contains('Schedule')) return Icons.schedule_rounded;
-    if (title.contains('API')) return Icons.key_rounded;
-    return Icons.notifications_rounded;
-  }
-
-  Widget _buildTextField({
-    required TextEditingController controller,
-    required String label,
-    required String hint,
-    required IconData icon,
-  }) {
+  Widget _buildSection(String title, List<Widget> children) {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        Text(
-          label,
-          style: const TextStyle(color: Colors.white70, fontSize: 14),
+        Padding(
+          padding: const EdgeInsets.only(left: 8, bottom: 12),
+          child: Text(
+            title.toUpperCase(),
+            style: AppTextStyles.caption.copyWith(
+              color: AppColors.primary,
+              letterSpacing: 1.5,
+              fontWeight: FontWeight.bold,
+            ),
+          ),
         ),
+        Container(
+          padding: const EdgeInsets.all(20),
+          decoration: BoxDecoration(
+            color: AppColors.surface,
+            borderRadius: BorderRadius.circular(24),
+            border: Border.all(color: AppColors.glassBorder),
+          ),
+          child: Column(children: children),
+        ),
+      ],
+    );
+  }
+
+  Widget _buildTextField(TextEditingController controller, String label, IconData icon, {bool isPassword = false}) {
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Text(label, style: AppTextStyles.caption.copyWith(color: AppColors.textMuted)),
         const SizedBox(height: 8),
         TextFormField(
           controller: controller,
-          style: const TextStyle(color: Colors.white),
+          obscureText: isPassword,
+          style: AppTextStyles.body,
           decoration: InputDecoration(
-            hintText: hint,
-            hintStyle: TextStyle(color: Colors.white.withValues(alpha: 0.3)),
-            prefixIcon: Icon(icon, color: Colors.white54),
+            prefixIcon: Icon(icon, color: AppColors.primary, size: 20),
             filled: true,
-            fillColor: Colors.white.withValues(alpha: 0.1),
+            fillColor: Colors.white.withOpacity(0.05),
             border: OutlineInputBorder(
-              borderRadius: BorderRadius.circular(12),
+              borderRadius: BorderRadius.circular(16),
               borderSide: BorderSide.none,
             ),
-            focusedBorder: OutlineInputBorder(
-              borderRadius: BorderRadius.circular(12),
-              borderSide: const BorderSide(color: AppColors.primary, width: 2),
-            ),
+            contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 16),
           ),
         ),
       ],
     );
   }
 
-  Widget _buildTimeRow(
-    String title,
-    String time,
-    IconData icon,
-    Function(String) onChanged,
-  ) {
-    return GestureDetector(
+  Widget _buildTimePickerTile(String title, String time, IconData icon, Function(String) onTap) {
+    return InkWell(
       onTap: () async {
         final parts = time.split(':');
         final picked = await showTimePicker(
           context: context,
-          initialTime: TimeOfDay(
-            hour: int.parse(parts[0]),
-            minute: int.parse(parts[1]),
-          ),
-          builder: (c, child) => Theme(
-            data: Theme.of(c).copyWith(
-              colorScheme: const ColorScheme.dark(
-                primary: AppColors.primary,
-                surface: Color(0xFF1E3A5F),
-              ),
-            ),
-            child: child!,
-          ),
+          initialTime: TimeOfDay(hour: int.parse(parts[0]), minute: int.parse(parts[1])),
         );
         if (picked != null) {
-          onChanged(
-            '${picked.hour.toString().padLeft(2, '0')}:${picked.minute.toString().padLeft(2, '0')}',
-          );
+          onTap('${picked.hour.toString().padLeft(2, '0')}:${picked.minute.toString().padLeft(2, '0')}');
         }
       },
-      child: Container(
-        margin: const EdgeInsets.only(bottom: 12),
-        padding: const EdgeInsets.all(16),
-        decoration: BoxDecoration(
-          color: Colors.white.withValues(alpha: 0.1),
-          borderRadius: BorderRadius.circular(12),
-        ),
+      child: Padding(
+        padding: const EdgeInsets.symmetric(vertical: 12),
         child: Row(
           children: [
-            Icon(icon, color: Colors.white70, size: 20),
-            const SizedBox(width: 12),
-            Expanded(
-              child: Text(
-                title,
-                style: const TextStyle(color: Colors.white, fontSize: 14),
-              ),
-            ),
+            Icon(icon, color: AppColors.textSecondary, size: 22),
+            const SizedBox(width: 16),
+            Expanded(child: Text(title, style: AppTextStyles.body)),
             Container(
               padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
               decoration: BoxDecoration(
-                color: AppColors.primary.withValues(alpha: 0.2),
+                color: AppColors.primary.withOpacity(0.1),
                 borderRadius: BorderRadius.circular(8),
               ),
-              child: Text(
-                time,
-                style: const TextStyle(
-                  color: Colors.white,
-                  fontWeight: FontWeight.bold,
-                ),
-              ),
+              child: Text(time, style: AppTextStyles.body.copyWith(color: AppColors.primary, fontWeight: FontWeight.bold)),
             ),
           ],
         ),
@@ -341,44 +268,18 @@ class _SettingsScreenState extends State<SettingsScreen> {
     );
   }
 
-  Widget _buildNotificationToggle() {
-    return Container(
-      padding: const EdgeInsets.all(16),
-      decoration: BoxDecoration(
-        color: Colors.white.withValues(alpha: 0.1),
-        borderRadius: BorderRadius.circular(12),
-      ),
+  Widget _buildToggleTile(String title, bool value, IconData icon, Function(bool) onChanged) {
+    return Padding(
+      padding: const EdgeInsets.symmetric(vertical: 4),
       child: Row(
         children: [
-          Icon(
-            _notificationsEnabled
-                ? Icons.notifications_active_rounded
-                : Icons.notifications_off_rounded,
-            color: _notificationsEnabled ? AppColors.success : Colors.white54,
-          ),
-          const SizedBox(width: 12),
-          Expanded(
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                const Text(
-                  'Push Notifications',
-                  style: TextStyle(color: Colors.white, fontSize: 16),
-                ),
-                Text(
-                  _notificationsEnabled ? 'Enabled' : 'Disabled',
-                  style: TextStyle(
-                    color: Colors.white.withValues(alpha: 0.6),
-                    fontSize: 12,
-                  ),
-                ),
-              ],
-            ),
-          ),
-          Switch(
-            value: _notificationsEnabled,
-            onChanged: (v) => setState(() => _notificationsEnabled = v),
-            activeTrackColor: AppColors.success,
+          Icon(icon, color: AppColors.textSecondary, size: 22),
+          const SizedBox(width: 16),
+          Expanded(child: Text(title, style: AppTextStyles.body)),
+          Switch.adaptive(
+            value: value,
+            onChanged: onChanged,
+            activeColor: AppColors.primary,
           ),
         ],
       ),
@@ -392,16 +293,11 @@ class _SettingsScreenState extends State<SettingsScreen> {
         onPressed: _saveSettings,
         style: ElevatedButton.styleFrom(
           backgroundColor: AppColors.primary,
-          foregroundColor: Colors.white,
-          padding: const EdgeInsets.symmetric(vertical: 16),
-          shape: RoundedRectangleBorder(
-            borderRadius: BorderRadius.circular(12),
-          ),
+          padding: const EdgeInsets.symmetric(vertical: 20),
+          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(18)),
+          elevation: 0,
         ),
-        child: const Text(
-          'Save Settings',
-          style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
-        ),
+        child: Text('Save Preferences', style: AppTextStyles.button),
       ),
     );
   }
@@ -415,22 +311,18 @@ class _SettingsScreenState extends State<SettingsScreen> {
       preferredBreakStart: _breakStartTime,
       preferredBreakDuration: int.tryParse(_breakDurationController.text) ?? 60,
       wakeUpTime: _wakeUpTime,
-      apiKeyOpenWeather: _openWeatherKeyController.text.isEmpty
-          ? null
-          : _openWeatherKeyController.text,
-      apiKeyGoogleMaps: _googleMapsKeyController.text.isEmpty
-          ? null
-          : _googleMapsKeyController.text,
-      apiKeyGemini: _geminiKeyController.text.isEmpty
-          ? null
-          : _geminiKeyController.text,
+      apiKeyOpenWeather: _openWeatherKeyController.text.isEmpty ? null : _openWeatherKeyController.text,
+      apiKeyGoogleMaps: _googleMapsKeyController.text.isEmpty ? null : _googleMapsKeyController.text,
+      apiKeyGemini: _geminiKeyController.text.isEmpty ? null : _geminiKeyController.text,
       isNotificationEnabled: _notificationsEnabled,
     );
     context.read<AppProvider>().saveSettings(settings);
     ScaffoldMessenger.of(context).showSnackBar(
-      const SnackBar(
-        content: Text('Settings saved!'),
+      SnackBar(
+        content: const Text('Settings saved successfully!'),
         backgroundColor: AppColors.success,
+        behavior: SnackBarBehavior.floating,
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
       ),
     );
     Navigator.pop(context);

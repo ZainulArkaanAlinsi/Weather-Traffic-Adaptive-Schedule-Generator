@@ -1,205 +1,164 @@
 import 'package:flutter/material.dart';
+import 'package:animate_do/animate_do.dart';
 import '../models/task.dart';
 import '../utils/constants.dart';
 
 class TaskCard extends StatelessWidget {
   final Task task;
   final VoidCallback? onTap;
+  final int index;
 
-  const TaskCard({super.key, required this.task, this.onTap});
+  const TaskCard({
+    super.key,
+    required this.task,
+    this.onTap,
+    this.index = 0,
+  });
 
   @override
   Widget build(BuildContext context) {
-    return GestureDetector(
-      onTap: onTap,
-      child: Container(
-        margin: const EdgeInsets.only(bottom: 16),
-        decoration: BoxDecoration(
-          color: Colors.white.withValues(alpha: 0.05),
-          borderRadius: BorderRadius.circular(20),
-          border: Border.all(color: _getBorderColor(), width: 1.5),
-          boxShadow: [
-            BoxShadow(
-              color: Colors.black.withValues(alpha: 0.2),
-              blurRadius: 10,
-              offset: const Offset(0, 4),
+    return FadeInUp(
+      delay: Duration(milliseconds: index * 100),
+      duration: const Duration(milliseconds: 500),
+      child: GestureDetector(
+        onTap: onTap,
+        child: Container(
+          margin: const EdgeInsets.only(bottom: 16),
+          decoration: BoxDecoration(
+            color: AppColors.glassBackground,
+            borderRadius: BorderRadius.circular(24),
+            border: Border.all(
+              color: _getBorderColor(),
+              width: 1.5,
             ),
-          ],
-        ),
-        child: ClipRRect(
-          borderRadius: BorderRadius.circular(20),
-          child: Container(
-            padding: const EdgeInsets.all(20),
-            decoration: BoxDecoration(
-              gradient: LinearGradient(
-                colors: [
-                  Colors.white.withValues(alpha: 0.1),
-                  Colors.white.withValues(alpha: 0.03),
-                ],
-                begin: Alignment.topLeft,
-                end: Alignment.bottomRight,
+            boxShadow: [
+              BoxShadow(
+                color: Colors.black.withOpacity(0.2),
+                blurRadius: 20,
+                offset: const Offset(0, 10),
               ),
-            ),
-            child: Row(
-              children: [
-                Container(
-                  width: 50,
-                  height: 50,
-                  decoration: BoxDecoration(
-                    gradient: LinearGradient(
-                      colors: [
-                        _getPriorityColor().withValues(alpha: 0.4),
-                        _getPriorityColor().withValues(alpha: 0.1),
-                      ],
-                      begin: Alignment.topLeft,
-                      end: Alignment.bottomRight,
-                    ),
-                    borderRadius: BorderRadius.circular(15),
-                    border: Border.all(
-                      color: _getPriorityColor().withValues(alpha: 0.3),
-                      width: 1,
-                    ),
-                  ),
-                  child: Icon(_getIcon(), color: _getPriorityColor(), size: 24),
+            ],
+          ),
+          child: ClipRRect(
+            borderRadius: BorderRadius.circular(24),
+            child: Container(
+              padding: const EdgeInsets.all(20),
+              decoration: BoxDecoration(
+                gradient: LinearGradient(
+                  colors: [
+                    Colors.white.withOpacity(0.08),
+                    Colors.white.withOpacity(0.02),
+                  ],
+                  begin: Alignment.topLeft,
+                  end: Alignment.bottomRight,
                 ),
-                const SizedBox(width: 16),
-                Expanded(
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      Row(
-                        children: [
-                          Expanded(
-                            child: Text(
-                              task.title,
-                              style: const TextStyle(
-                                color: Colors.white,
-                                fontSize: 18,
-                                fontWeight: FontWeight.bold,
-                                letterSpacing: 0.5,
+              ),
+              child: Row(
+                children: [
+                  _buildPriorityIcon(),
+                  const SizedBox(width: 16),
+                  Expanded(
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Row(
+                          children: [
+                            Expanded(
+                              child: Text(
+                                task.title,
+                                style: AppTextStyles.body.copyWith(
+                                  fontWeight: FontWeight.bold,
+                                  fontSize: 18,
+                                ),
+                                maxLines: 1,
+                                overflow: TextOverflow.ellipsis,
                               ),
-                              maxLines: 1,
-                              overflow: TextOverflow.ellipsis,
                             ),
-                          ),
-                          _buildStatusBadge(),
-                        ],
-                      ),
-                      const SizedBox(height: 8),
-                      Row(
-                        children: [
-                          Icon(
-                            Icons.access_time_rounded,
-                            size: 14,
-                            color: Colors.white.withValues(alpha: 0.7),
-                          ),
-                          const SizedBox(width: 4),
-                          Text(
-                            '${task.duration} mins',
-                            style: TextStyle(
-                              color: Colors.white.withValues(alpha: 0.7),
-                              fontSize: 13,
-                            ),
-                          ),
-                          const SizedBox(width: 12),
-                          Icon(
-                            Icons.flag_rounded,
-                            size: 14,
-                            color: _getPriorityColor(),
-                          ),
-                          const SizedBox(width: 4),
-                          Text(
-                            _getPriorityText(),
-                            style: TextStyle(
-                              color: _getPriorityColor(),
-                              fontSize: 13,
-                              fontWeight: FontWeight.w600,
-                            ),
-                          ),
-                          if (task.isOutdoor) ...[
-                            const SizedBox(width: 12),
-                            Icon(
-                              Icons.wb_sunny_outlined,
-                              size: 14,
-                              color: Colors.amber.withValues(alpha: 0.8),
-                            ),
+                            _buildStatusBadge(),
                           ],
+                        ),
+                        const SizedBox(height: 8),
+                        Row(
+                          children: [
+                            _buildTag(
+                              Icons.access_time_rounded,
+                              '${task.duration}m',
+                              AppColors.textSecondary,
+                            ),
+                            const SizedBox(width: 12),
+                            _buildTag(
+                              Icons.flag_rounded,
+                              _getPriorityText(),
+                              _getPriorityColor(),
+                            ),
+                            if (task.isOutdoor) ...[
+                              const SizedBox(width: 12),
+                              _buildTag(
+                                Icons.wb_sunny_outlined,
+                                'Outdoor',
+                                Colors.amber,
+                              ),
+                            ],
+                          ],
+                        ),
+                        if (task.scheduledTime != null) ...[
+                          const SizedBox(height: 12),
+                          _buildScheduledTimeSection(),
                         ],
-                      ),
-                      if (task.scheduledTime != null) ...[
-                        const SizedBox(height: 12),
-                        Container(
-                          padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
-                          decoration: BoxDecoration(
-                            color: AppColors.primary.withValues(alpha: 0.2),
-                            borderRadius: BorderRadius.circular(10),
-                          ),
-                          child: Row(
-                            mainAxisSize: MainAxisSize.min,
-                            children: [
-                              Icon(
-                                Icons.schedule_rounded,
-                                size: 14,
-                                color: Colors.blueAccent.shade100,
-                              ),
-                              const SizedBox(width: 6),
-                              Text(
-                                _formatTime(task.scheduledTime!),
-                                style: TextStyle(
-                                  color: Colors.blueAccent.shade100,
-                                  fontSize: 13,
-                                  fontWeight: FontWeight.w600,
-                                ),
-                              ),
-                            ],
-                          ),
-                        ),
+                        if (task.rescheduleReason != null) ...[
+                          const SizedBox(height: 12),
+                          _buildReasonSection(),
+                        ],
                       ],
-                      if (task.rescheduleReason != null) ...[
-                        const SizedBox(height: 12),
-                        Container(
-                          padding: const EdgeInsets.symmetric(
-                            horizontal: 10,
-                            vertical: 8,
-                          ),
-                          decoration: BoxDecoration(
-                            color: AppColors.warning.withValues(alpha: 0.15),
-                            borderRadius: BorderRadius.circular(10),
-                            border: Border.all(
-                              color: AppColors.warning.withValues(alpha: 0.3),
-                            )
-                          ),
-                          child: Row(
-                            children: [
-                              const Icon(
-                                Icons.info_outline_rounded,
-                                size: 14,
-                                color: AppColors.warning,
-                              ),
-                              const SizedBox(width: 6),
-                              Expanded(
-                                child: Text(
-                                  task.rescheduleReason!,
-                                  style: const TextStyle(
-                                    color: AppColors.warning,
-                                    fontSize: 12,
-                                  ),
-                                  maxLines: 2,
-                                  overflow: TextOverflow.ellipsis,
-                                ),
-                              ),
-                            ],
-                          ),
-                        ),
-                      ],
-                    ],
+                    ),
                   ),
-                ),
-              ],
+                ],
+              ),
             ),
           ),
         ),
       ),
+    );
+  }
+
+  Widget _buildPriorityIcon() {
+    final color = _getPriorityColor();
+    return Container(
+      width: 54,
+      height: 54,
+      decoration: BoxDecoration(
+        color: color.withOpacity(0.15),
+        borderRadius: BorderRadius.circular(18),
+        border: Border.all(
+          color: color.withOpacity(0.3),
+          width: 1,
+        ),
+        boxShadow: [
+          BoxShadow(
+            color: color.withOpacity(0.2),
+            blurRadius: 12,
+            spreadRadius: -2,
+          ),
+        ],
+      ),
+      child: Icon(_getIcon(), color: color, size: 26),
+    );
+  }
+
+  Widget _buildTag(IconData icon, String label, Color color) {
+    return Row(
+      mainAxisSize: MainAxisSize.min,
+      children: [
+        Icon(icon, size: 14, color: color.withOpacity(0.8)),
+        const SizedBox(width: 4),
+        Text(
+          label,
+          style: AppTextStyles.caption.copyWith(
+            color: color.withOpacity(0.9),
+            fontWeight: FontWeight.w500,
+          ),
+        ),
+      ],
     );
   }
 
@@ -220,22 +179,86 @@ class TaskCard extends StatelessWidget {
         text = 'Rescheduled';
         break;
       default:
-        color = Colors.grey;
+        color = AppColors.textMuted;
         text = 'Pending';
     }
     return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
+      padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
       decoration: BoxDecoration(
-        color: color.withValues(alpha: 0.2),
-        borderRadius: BorderRadius.circular(8),
+        color: color.withOpacity(0.15),
+        borderRadius: BorderRadius.circular(10),
+        border: Border.all(color: color.withOpacity(0.3), width: 0.5),
       ),
       child: Text(
-        text,
-        style: TextStyle(
+        text.toUpperCase(),
+        style: AppTextStyles.caption.copyWith(
           color: color,
-          fontSize: 10,
-          fontWeight: FontWeight.w600,
+          fontSize: 9,
+          fontWeight: FontWeight.w900,
+          letterSpacing: 0.5,
         ),
+      ),
+    );
+  }
+
+  Widget _buildScheduledTimeSection() {
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
+      decoration: BoxDecoration(
+        color: AppColors.primary.withOpacity(0.1),
+        borderRadius: BorderRadius.circular(10),
+      ),
+      child: Row(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          const Icon(
+            Icons.schedule_rounded,
+            size: 14,
+            color: AppColors.primary,
+          ),
+          const SizedBox(width: 6),
+          Text(
+            _formatTime(task.scheduledTime!),
+            style: AppTextStyles.caption.copyWith(
+              color: AppColors.primary,
+              fontWeight: FontWeight.bold,
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildReasonSection() {
+    return Container(
+      padding: const EdgeInsets.all(10),
+      decoration: BoxDecoration(
+        color: AppColors.danger.withOpacity(0.08),
+        borderRadius: BorderRadius.circular(12),
+        border: Border.all(
+          color: AppColors.danger.withOpacity(0.2),
+        ),
+      ),
+      child: Row(
+        children: [
+          const Icon(
+            Icons.info_outline_rounded,
+            size: 14,
+            color: AppColors.danger,
+          ),
+          const SizedBox(width: 8),
+          Expanded(
+            child: Text(
+              task.rescheduleReason!,
+              style: AppTextStyles.caption.copyWith(
+                color: AppColors.danger,
+                height: 1.3,
+              ),
+              maxLines: 2,
+              overflow: TextOverflow.ellipsis,
+            ),
+          ),
+        ],
       ),
     );
   }
@@ -248,7 +271,7 @@ class TaskCard extends StatelessWidget {
       }
       return AppColors.calendarTrafficReschedule;
     }
-    return Colors.white.withValues(alpha: 0.1);
+    return AppColors.glassBorder;
   }
 
   Color _getPriorityColor() {

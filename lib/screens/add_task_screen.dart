@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
+import 'package:animate_do/animate_do.dart';
 import '../models/task.dart';
 import '../providers/app_provider.dart';
 import '../utils/constants.dart';
@@ -30,18 +31,10 @@ class _AddTaskScreenState extends State<AddTaskScreen> {
   @override
   void initState() {
     super.initState();
-    _titleController = TextEditingController(
-      text: widget.editTask?.title ?? '',
-    );
-    _durationController = TextEditingController(
-      text: widget.editTask?.duration.toString() ?? '30',
-    );
-    _locationController = TextEditingController(
-      text: widget.editTask?.location ?? '',
-    );
-    _destinationController = TextEditingController(
-      text: widget.editTask?.destination ?? '',
-    );
+    _titleController = TextEditingController(text: widget.editTask?.title ?? '');
+    _durationController = TextEditingController(text: widget.editTask?.duration.toString() ?? '30');
+    _locationController = TextEditingController(text: widget.editTask?.location ?? '');
+    _destinationController = TextEditingController(text: widget.editTask?.destination ?? '');
 
     if (widget.editTask != null) {
       _selectedPriority = widget.editTask!.priority;
@@ -66,238 +59,252 @@ class _AddTaskScreenState extends State<AddTaskScreen> {
 
   @override
   Widget build(BuildContext context) {
-    return Scaffold(
-      body: Stack(
+    return Container(
+      height: MediaQuery.of(context).size.height * 0.9,
+      decoration: BoxDecoration(
+        color: AppColors.background,
+        borderRadius: const BorderRadius.vertical(top: Radius.circular(32)),
+        border: Border.all(color: AppColors.glassBorder),
+      ),
+      child: Stack(
         children: [
-          Container(
-            decoration: BoxDecoration(
-              gradient: LinearGradient(
-                colors: [const Color(0xFF1E3A5F), const Color(0xFF0D253F)],
-                begin: Alignment.topLeft,
-                end: Alignment.bottomRight,
-              ),
-            ),
-          ),
-          SafeArea(
-            child: Column(
-              children: [
-                _buildHeader(),
-                Expanded(
-                  child: SingleChildScrollView(
-                    padding: const EdgeInsets.all(20),
-                    child: Form(
-                      key: _formKey,
-                      child: Column(
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        children: [
-                          _buildSectionTitle('Basic Information'),
-                          const SizedBox(height: 16),
-                          _buildTextField(
-                            controller: _titleController,
-                            label: 'Task Title',
-                            hint: 'e.g., Morning run at park',
-                            icon: Icons.title_rounded,
-                            validator: (v) => v?.isEmpty ?? true
-                                ? 'Please enter a title'
-                                : null,
+          _buildBackgroundGlow(),
+          Column(
+            children: [
+              _buildHandle(),
+              _buildHeader(),
+              Expanded(
+                child: SingleChildScrollView(
+                  physics: const BouncingScrollPhysics(),
+                  padding: const EdgeInsets.fromLTRB(24, 8, 24, 100),
+                  child: Form(
+                    key: _formKey,
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        FadeInUp(
+                          duration: const Duration(milliseconds: 300),
+                          child: _buildInputGroup(
+                            title: 'What needs to be done?',
+                            child: _buildTextField(
+                              controller: _titleController,
+                              hint: 'Task name...',
+                              icon: Icons.edit_note_rounded,
+                              validator: (v) => v?.isEmpty ?? true ? 'Required' : null,
+                            ),
                           ),
-                          const SizedBox(height: 16),
-                          _buildTextField(
-                            controller: _durationController,
-                            label: 'Duration (minutes)',
-                            hint: '30',
-                            icon: Icons.timer_outlined,
-                            keyboardType: TextInputType.number,
-                            validator: (v) => v?.isEmpty ?? true
-                                ? 'Please enter duration'
-                                : null,
+                        ),
+                        const SizedBox(height: 24),
+                        FadeInUp(
+                          duration: const Duration(milliseconds: 400),
+                          child: Row(
+                            children: [
+                              Expanded(
+                                child: _buildInputGroup(
+                                  title: 'Duration',
+                                  child: _buildTextField(
+                                    controller: _durationController,
+                                    hint: 'Min',
+                                    icon: Icons.timer_outlined,
+                                    keyboardType: TextInputType.number,
+                                    validator: (v) => v?.isEmpty ?? true ? 'Required' : null,
+                                  ),
+                                ),
+                              ),
+                              const SizedBox(width: 16),
+                              Expanded(
+                                child: _buildInputGroup(
+                                  title: 'Priority',
+                                  child: _buildPrioritySelector(),
+                                ),
+                              ),
+                            ],
                           ),
-                          const SizedBox(height: 24),
-                          _buildSectionTitle('Priority & Schedule'),
-                          const SizedBox(height: 16),
-                          _buildPrioritySelector(),
-                          const SizedBox(height: 16),
-                          _buildDateTimeSelectors(),
-                          const SizedBox(height: 24),
-                          _buildSectionTitle('Activity Details'),
-                          const SizedBox(height: 16),
-                          _buildOutdoorToggle(),
-                          const SizedBox(height: 16),
-                          _buildConstraintSection(),
-                          const SizedBox(height: 24),
-                          _buildSectionTitle('Location (Optional)'),
-                          const SizedBox(height: 16),
-                          _buildTextField(
-                            controller: _locationController,
-                            label: 'Location',
-                            hint: 'e.g., City Park',
-                            icon: Icons.location_on_outlined,
+                        ),
+                        const SizedBox(height: 24),
+                        FadeInUp(
+                          duration: const Duration(milliseconds: 500),
+                          child: _buildInputGroup(
+                            title: 'Schedule & Deadline',
+                            child: _buildDateTimeSelectors(),
                           ),
-                          const SizedBox(height: 16),
-                          _buildTextField(
-                            controller: _destinationController,
-                            label: 'Destination',
-                            hint: 'e.g., Office',
-                            icon: Icons.directions_outlined,
+                        ),
+                        const SizedBox(height: 24),
+                        FadeInUp(
+                          duration: const Duration(milliseconds: 600),
+                          child: _buildInputGroup(
+                            title: 'Activity Type',
+                            child: _buildOutdoorSettings(),
                           ),
-                          const SizedBox(height: 32),
-                          _buildSubmitButton(),
-                        ],
-                      ),
+                        ),
+                        const SizedBox(height: 24),
+                        FadeInUp(
+                          duration: const Duration(milliseconds: 700),
+                          child: _buildInputGroup(
+                            title: 'Location Details',
+                            child: Column(
+                              children: [
+                                _buildTextField(
+                                  controller: _locationController,
+                                  hint: 'Current location (optional)',
+                                  icon: Icons.my_location_rounded,
+                                ),
+                                const SizedBox(height: 12),
+                                _buildTextField(
+                                  controller: _destinationController,
+                                  hint: 'Destination (optional)',
+                                  icon: Icons.place_rounded,
+                                ),
+                              ],
+                            ),
+                          ),
+                        ),
+                      ],
                     ),
                   ),
                 ),
-              ],
-            ),
+              ),
+            ],
           ),
+          _buildBottomAction(),
         ],
+      ),
+    );
+  }
+
+  Widget _buildBackgroundGlow() {
+    return Positioned(
+      top: 100,
+      left: -50,
+      child: Container(
+        width: 200,
+        height: 200,
+        decoration: BoxDecoration(
+          shape: BoxShape.circle,
+          gradient: RadialGradient(
+            colors: [AppColors.primary.withOpacity(0.15), Colors.transparent],
+          ),
+        ),
+      ),
+    );
+  }
+
+  Widget _buildHandle() {
+    return Center(
+      child: Container(
+        margin: const EdgeInsets.only(top: 12),
+        width: 48,
+        height: 4,
+        decoration: BoxDecoration(
+          color: Colors.white.withOpacity(0.2),
+          borderRadius: BorderRadius.circular(2),
+        ),
       ),
     );
   }
 
   Widget _buildHeader() {
     return Padding(
-      padding: const EdgeInsets.all(16),
+      padding: const EdgeInsets.fromLTRB(24, 16, 24, 16),
       child: Row(
+        mainAxisAlignment: MainAxisAlignment.spaceBetween,
         children: [
+          Text(
+            widget.editTask != null ? 'Edit Task' : 'New Task',
+            style: AppTextStyles.heading2.copyWith(fontSize: 24),
+          ),
           IconButton(
             onPressed: () => Navigator.pop(context),
-            icon: const Icon(Icons.arrow_back, color: Colors.white),
+            icon: const Icon(Icons.close_rounded, color: Colors.white70),
           ),
-          Expanded(
-            child: Text(
-              widget.editTask != null ? 'Edit Task' : 'Add New Task',
-              style: const TextStyle(
-                color: Colors.white,
-                fontSize: 20,
-                fontWeight: FontWeight.bold,
-              ),
-              textAlign: TextAlign.center,
-            ),
-          ),
-          const SizedBox(width: 48),
         ],
       ),
     );
   }
 
-  Widget _buildSectionTitle(String title) {
-    return Text(
-      title,
-      style: const TextStyle(
-        color: Colors.white,
-        fontSize: 18,
-        fontWeight: FontWeight.bold,
-      ),
+  Widget _buildInputGroup({required String title, required Widget child}) {
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Text(
+          title,
+          style: AppTextStyles.caption.copyWith(
+            color: Colors.white.withOpacity(0.5),
+            fontWeight: FontWeight.bold,
+            letterSpacing: 1.2,
+          ),
+        ),
+        const SizedBox(height: 12),
+        child,
+      ],
     );
   }
 
   Widget _buildTextField({
     required TextEditingController controller,
-    required String label,
     required String hint,
     required IconData icon,
     TextInputType? keyboardType,
     String? Function(String?)? validator,
   }) {
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        Text(
-          label,
-          style: const TextStyle(color: Colors.white70, fontSize: 14),
+    return Container(
+      decoration: BoxDecoration(
+        color: AppColors.surface,
+        borderRadius: BorderRadius.circular(16),
+        border: Border.all(color: AppColors.glassBorder),
+      ),
+      child: TextFormField(
+        controller: controller,
+        style: AppTextStyles.body,
+        keyboardType: keyboardType,
+        validator: validator,
+        decoration: InputDecoration(
+          hintText: hint,
+          hintStyle: AppTextStyles.body.copyWith(color: AppColors.textMuted),
+          prefixIcon: Icon(icon, color: AppColors.primary, size: 20),
+          border: InputBorder.none,
+          contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
         ),
-        const SizedBox(height: 8),
-        TextFormField(
-          controller: controller,
-          style: const TextStyle(color: Colors.white),
-          keyboardType: keyboardType,
-          validator: validator,
-          decoration: InputDecoration(
-            hintText: hint,
-            hintStyle: TextStyle(color: Colors.white.withValues(alpha: 0.3)),
-            prefixIcon: Icon(icon, color: Colors.white54),
-            filled: true,
-            fillColor: Colors.white.withValues(alpha: 0.1),
-            border: OutlineInputBorder(
-              borderRadius: BorderRadius.circular(12),
-              borderSide: BorderSide.none,
-            ),
-            focusedBorder: OutlineInputBorder(
-              borderRadius: BorderRadius.circular(12),
-              borderSide: const BorderSide(color: AppColors.primary, width: 2),
-            ),
-          ),
-        ),
-      ],
+      ),
     );
   }
 
   Widget _buildPrioritySelector() {
     return Container(
-      padding: const EdgeInsets.all(16),
+      height: 50,
+      padding: const EdgeInsets.all(4),
       decoration: BoxDecoration(
-        color: Colors.white.withValues(alpha: 0.1),
+        color: AppColors.surface,
         borderRadius: BorderRadius.circular(16),
+        border: Border.all(color: AppColors.glassBorder),
       ),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Row(
-            children: [
-              const Icon(Icons.flag_rounded, color: Colors.white70, size: 20),
-              const SizedBox(width: 8),
-              Text(
-                'Priority',
-                style: TextStyle(
-                  color: Colors.white.withValues(alpha: 0.7),
-                  fontSize: 14,
+      child: Row(
+        children: Priority.values.map((p) {
+          final isSelected = _selectedPriority == p;
+          final color = p == Priority.high ? AppColors.danger : (p == Priority.medium ? AppColors.warning : AppColors.success);
+          return Expanded(
+            child: GestureDetector(
+              onTap: () => setState(() => _selectedPriority = p),
+              child: AnimatedContainer(
+                duration: const Duration(milliseconds: 200),
+                decoration: BoxDecoration(
+                  color: isSelected ? color.withOpacity(0.2) : Colors.transparent,
+                  borderRadius: BorderRadius.circular(12),
+                  border: isSelected ? Border.all(color: color.withOpacity(0.5)) : null,
                 ),
-              ),
-            ],
-          ),
-          const SizedBox(height: 16),
-          Row(
-            children: Priority.values.map((p) {
-              final isSelected = _selectedPriority == p;
-              final color = p == Priority.high
-                  ? AppColors.danger
-                  : p == Priority.medium
-                  ? AppColors.warning
-                  : AppColors.secondary;
-              return Expanded(
-                child: GestureDetector(
-                  onTap: () => setState(() => _selectedPriority = p),
-                  child: Container(
-                    margin: const EdgeInsets.only(right: 8),
-                    padding: const EdgeInsets.symmetric(vertical: 14),
-                    decoration: BoxDecoration(
-                      color: isSelected
-                          ? color.withValues(alpha: 0.3)
-                          : Colors.white.withValues(alpha: 0.05),
-                      borderRadius: BorderRadius.circular(12),
-                      border: Border.all(
-                        color: isSelected ? color : Colors.transparent,
-                        width: 2,
-                      ),
-                    ),
-                    child: Text(
-                      p.name.toUpperCase(),
-                      textAlign: TextAlign.center,
-                      style: TextStyle(
-                        color: isSelected ? color : Colors.white70,
-                        fontWeight: isSelected
-                            ? FontWeight.bold
-                            : FontWeight.normal,
-                        fontSize: 12,
-                      ),
+                child: Center(
+                  child: Text(
+                    p.name[0].toUpperCase() + p.name.substring(1),
+                    style: AppTextStyles.caption.copyWith(
+                      color: isSelected ? color : AppColors.textSecondary,
+                      fontWeight: isSelected ? FontWeight.bold : FontWeight.normal,
                     ),
                   ),
                 ),
-              );
-            }).toList(),
-          ),
-        ],
+              ),
+            ),
+          );
+        }).toList(),
       ),
     );
   }
@@ -305,253 +312,177 @@ class _AddTaskScreenState extends State<AddTaskScreen> {
   Widget _buildDateTimeSelectors() {
     return Row(
       children: [
-        Expanded(child: _buildDatePicker()),
+        Expanded(
+          child: _buildGlassButton(
+            icon: Icons.calendar_today_rounded,
+            label: _selectedDeadline != null 
+              ? '${_selectedDeadline!.day}/${_selectedDeadline!.month}' 
+              : 'Set Date',
+            onTap: _pickDate,
+          ),
+        ),
         const SizedBox(width: 12),
-        Expanded(child: _buildTimePicker()),
+        Expanded(
+          child: _buildGlassButton(
+            icon: Icons.access_time_rounded,
+            label: _scheduledTime != null 
+              ? _scheduledTime!.format(context) 
+              : 'Set Time',
+            onTap: _pickTime,
+          ),
+        ),
       ],
     );
   }
 
-  Widget _buildDatePicker() {
+  Widget _buildGlassButton({required IconData icon, required String label, required VoidCallback onTap}) {
     return GestureDetector(
-      onTap: () async {
-        final date = await showDatePicker(
-          context: context,
-          initialDate: _selectedDeadline ?? DateTime.now(),
-          firstDate: DateTime.now(),
-          lastDate: DateTime.now().add(const Duration(days: 365)),
-          builder: (c, child) => Theme(
-            data: Theme.of(c).copyWith(
-              colorScheme: const ColorScheme.dark(
-                primary: AppColors.primary,
-                surface: Color(0xFF1E3A5F),
-              ),
-            ),
-            child: child!,
-          ),
-        );
-        if (date != null) setState(() => _selectedDeadline = date);
-      },
+      onTap: onTap,
       child: Container(
-        padding: const EdgeInsets.all(16),
+        padding: const EdgeInsets.symmetric(vertical: 14),
         decoration: BoxDecoration(
-          color: Colors.white.withValues(alpha: 0.1),
-          borderRadius: BorderRadius.circular(12),
+          color: AppColors.surface,
+          borderRadius: BorderRadius.circular(16),
+          border: Border.all(color: AppColors.glassBorder),
         ),
         child: Row(
+          mainAxisAlignment: MainAxisAlignment.center,
           children: [
-            const Icon(
-              Icons.calendar_today_rounded,
-              color: Colors.white54,
-              size: 20,
-            ),
-            const SizedBox(width: 12),
-            Text(
-              _selectedDeadline != null
-                  ? '${_selectedDeadline!.day}/${_selectedDeadline!.month}/${_selectedDeadline!.year}'
-                  : 'Deadline',
-              style: TextStyle(
-                color: _selectedDeadline != null
-                    ? Colors.white
-                    : Colors.white54,
-                fontSize: 14,
-              ),
-            ),
+            Icon(icon, size: 18, color: AppColors.primary),
+            const SizedBox(width: 8),
+            Text(label, style: AppTextStyles.body),
           ],
         ),
       ),
     );
   }
 
-  Widget _buildTimePicker() {
-    return GestureDetector(
-      onTap: () async {
-        final time = await showTimePicker(
-          context: context,
-          initialTime: _scheduledTime ?? TimeOfDay.now(),
-          builder: (c, child) => Theme(
-            data: Theme.of(c).copyWith(
-              colorScheme: const ColorScheme.dark(
-                primary: AppColors.primary,
-                surface: Color(0xFF1E3A5F),
+  Widget _buildOutdoorSettings() {
+    return Column(
+      children: [
+        Container(
+          padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+          decoration: BoxDecoration(
+            color: AppColors.surface,
+            borderRadius: BorderRadius.circular(16),
+            border: Border.all(color: AppColors.glassBorder),
+          ),
+          child: Row(
+            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+            children: [
+              Row(
+                children: [
+                  Icon(Icons.wb_sunny_rounded, color: _isOutdoor ? Colors.orange : AppColors.textMuted),
+                  const SizedBox(width: 12),
+                  Text('Outdoor Activity', style: AppTextStyles.body),
+                ],
               ),
-            ),
-            child: child!,
-          ),
-        );
-        if (time != null) setState(() => _scheduledTime = time);
-      },
-      child: Container(
-        padding: const EdgeInsets.all(16),
-        decoration: BoxDecoration(
-          color: Colors.white.withValues(alpha: 0.1),
-          borderRadius: BorderRadius.circular(12),
-        ),
-        child: Row(
-          children: [
-            const Icon(
-              Icons.access_time_rounded,
-              color: Colors.white54,
-              size: 20,
-            ),
-            const SizedBox(width: 12),
-            Text(
-              _scheduledTime != null ? _scheduledTime!.format(context) : 'Time',
-              style: TextStyle(
-                color: _scheduledTime != null ? Colors.white : Colors.white54,
-                fontSize: 14,
+              Switch(
+                value: _isOutdoor,
+                onChanged: (v) => setState(() => _isOutdoor = v),
+                activeColor: AppColors.primary,
               ),
-            ),
-          ],
+            ],
+          ),
         ),
-      ),
-    );
-  }
-
-  Widget _buildOutdoorToggle() {
-    return Container(
-      padding: const EdgeInsets.all(16),
-      decoration: BoxDecoration(
-        color: Colors.white.withValues(alpha: 0.1),
-        borderRadius: BorderRadius.circular(16),
-      ),
-      child: Row(
-        children: [
-          Icon(
-            _isOutdoor ? Icons.wb_sunny_rounded : Icons.home_rounded,
-            color: _isOutdoor ? Colors.amber : Colors.white70,
-          ),
-          const SizedBox(width: 12),
-          Expanded(
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                const Text(
-                  'Outdoor Activity',
-                  style: TextStyle(color: Colors.white, fontSize: 16),
-                ),
-                Text(
-                  'Task will be affected by weather',
-                  style: TextStyle(
-                    color: Colors.white.withValues(alpha: 0.5),
-                    fontSize: 12,
-                  ),
-                ),
-              ],
-            ),
-          ),
-          Switch(
-            value: _isOutdoor,
-            onChanged: (v) => setState(() => _isOutdoor = v),
-            activeTrackColor: AppColors.primary,
-          ),
-        ],
-      ),
-    );
-  }
-
-  Widget _buildConstraintSection() {
-    return Container(
-      padding: const EdgeInsets.all(16),
-      decoration: BoxDecoration(
-        color: Colors.white.withValues(alpha: 0.1),
-        borderRadius: BorderRadius.circular(16),
-      ),
-      child: Column(
-        children: [
+        if (_isOutdoor) ...[
+          const SizedBox(height: 12),
           _buildConstraintDropdown<WeatherConstraint>(
-            label: 'Weather Constraint',
-            value: _weatherConstraint,
             items: WeatherConstraint.values,
-            getLabel: (w) => w == WeatherConstraint.noPreference
-                ? 'No Preference'
-                : w == WeatherConstraint.noRain
-                ? 'No Rain'
-                : w == WeatherConstraint.noExtremeHeat
-                ? 'No Extreme Heat'
-                : 'No Storm',
-            onChanged: (v) =>
-                setState(() => _weatherConstraint = v ?? _weatherConstraint),
+            value: _weatherConstraint,
+            onChanged: (v) => setState(() => _weatherConstraint = v!),
+            label: 'Weather Constraint',
           ),
-          const SizedBox(height: 16),
+          const SizedBox(height: 12),
           _buildConstraintDropdown<TrafficConstraint>(
-            label: 'Traffic Constraint',
-            value: _trafficConstraint,
             items: TrafficConstraint.values,
-            getLabel: (t) => t == TrafficConstraint.noPreference
-                ? 'No Preference'
-                : t == TrafficConstraint.rescheduleIfTrafficHeavy
-                ? 'Reschedule if Heavy'
-                : 'Switch to Zoom',
-            onChanged: (v) =>
-                setState(() => _trafficConstraint = v ?? _trafficConstraint),
+            value: _trafficConstraint,
+            onChanged: (v) => setState(() => _trafficConstraint = v!),
+            label: 'Traffic Constraint',
           ),
         ],
-      ),
+      ],
     );
   }
 
   Widget _buildConstraintDropdown<T>({
-    required String label,
-    required T value,
     required List<T> items,
-    required String Function(T) getLabel,
-    required void Function(T?) onChanged,
+    required T value,
+    required ValueChanged<T?> onChanged,
+    required String label,
   }) {
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        Text(
-          label,
-          style: TextStyle(
-            color: Colors.white.withValues(alpha: 0.7),
-            fontSize: 12,
-          ),
-        ),
-        const SizedBox(height: 8),
-        Container(
-          padding: const EdgeInsets.symmetric(horizontal: 12),
-          decoration: BoxDecoration(
-            color: Colors.white.withValues(alpha: 0.05),
-            borderRadius: BorderRadius.circular(8),
-          ),
-          child: DropdownButton<T>(
-            value: value,
-            isExpanded: true,
-            underline: const SizedBox(),
-            dropdownColor: const Color(0xFF2D4A6F),
-            style: const TextStyle(color: Colors.white, fontSize: 14),
-            items: items
-                .map(
-                  (i) => DropdownMenuItem(value: i, child: Text(getLabel(i))),
-                )
-                .toList(),
-            onChanged: onChanged,
-          ),
-        ),
-      ],
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 16),
+      decoration: BoxDecoration(
+        color: AppColors.surface,
+        borderRadius: BorderRadius.circular(16),
+        border: Border.all(color: AppColors.glassBorder),
+      ),
+      child: DropdownButton<T>(
+        value: value,
+        items: items.map((e) => DropdownMenuItem(value: e, child: Text(e.toString().split('.').last))).toList(),
+        onChanged: onChanged,
+        isExpanded: true,
+        underline: const SizedBox(),
+        dropdownColor: AppColors.background,
+        style: AppTextStyles.body,
+        hint: Text(label),
+      ),
     );
   }
 
-  Widget _buildSubmitButton() {
-    return SizedBox(
-      width: double.infinity,
-      child: ElevatedButton(
-        onPressed: _saveTask,
-        style: ElevatedButton.styleFrom(
-          backgroundColor: AppColors.primary,
-          foregroundColor: Colors.white,
-          padding: const EdgeInsets.symmetric(vertical: 16),
-          shape: RoundedRectangleBorder(
-            borderRadius: BorderRadius.circular(12),
+  Widget _buildBottomAction() {
+    return Positioned(
+      bottom: 0,
+      left: 0,
+      right: 0,
+      child: Container(
+        padding: const EdgeInsets.all(24),
+        decoration: BoxDecoration(
+          gradient: LinearGradient(
+            begin: Alignment.topCenter,
+            end: Alignment.bottomCenter,
+            colors: [AppColors.background.withOpacity(0), AppColors.background],
           ),
         ),
-        child: const Text(
-          'Create Task',
-          style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
+        child: FadeInUp(
+          delay: const Duration(milliseconds: 800),
+          child: ElevatedButton(
+            onPressed: _saveTask,
+            style: ElevatedButton.styleFrom(
+              backgroundColor: AppColors.primary,
+              foregroundColor: Colors.white,
+              padding: const EdgeInsets.symmetric(vertical: 18),
+              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(18)),
+              elevation: 8,
+              shadowColor: AppColors.primary.withOpacity(0.5),
+            ),
+            child: Text(
+              widget.editTask != null ? 'Update Task' : 'Create Task',
+              style: AppTextStyles.button.copyWith(fontSize: 16),
+            ),
+          ),
         ),
       ),
     );
+  }
+
+  Future<void> _pickDate() async {
+    final date = await showDatePicker(
+      context: context,
+      initialDate: _selectedDeadline ?? DateTime.now(),
+      firstDate: DateTime.now(),
+      lastDate: DateTime.now().add(const Duration(days: 365)),
+    );
+    if (date != null) setState(() => _selectedDeadline = date);
+  }
+
+  Future<void> _pickTime() async {
+    final time = await showTimePicker(
+      context: context,
+      initialTime: _scheduledTime ?? TimeOfDay.now(),
+    );
+    if (time != null) setState(() => _scheduledTime = time);
   }
 
   void _saveTask() {
@@ -577,16 +508,10 @@ class _AddTaskScreenState extends State<AddTaskScreen> {
       isOutdoor: _isOutdoor,
       weatherConstraint: _weatherConstraint,
       trafficConstraint: _trafficConstraint,
-      location: _locationController.text.isEmpty
-          ? null
-          : _locationController.text,
-      destination: _destinationController.text.isEmpty
-          ? null
-          : _destinationController.text,
+      location: _locationController.text.isEmpty ? null : _locationController.text,
+      destination: _destinationController.text.isEmpty ? null : _destinationController.text,
       scheduledTime: scheduledDateTime,
-      status: scheduledDateTime != null
-          ? TaskStatus.scheduled
-          : TaskStatus.pending,
+      status: scheduledDateTime != null ? TaskStatus.scheduled : TaskStatus.pending,
     );
 
     final provider = context.read<AppProvider>();

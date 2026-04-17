@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
+import 'package:animate_do/animate_do.dart';
 import '../models/task.dart';
 import '../providers/app_provider.dart';
 import '../utils/constants.dart';
@@ -12,38 +13,48 @@ class TaskDetailScreen extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
+      backgroundColor: AppColors.background,
       body: Stack(
         children: [
-          Container(
-            decoration: BoxDecoration(
-              gradient: LinearGradient(
-                colors: [const Color(0xFF1E3A5F), const Color(0xFF0D253F)],
-                begin: Alignment.topLeft,
-                end: Alignment.bottomRight,
-              ),
-            ),
-          ),
+          _buildBackgroundElements(),
           SafeArea(
             child: Column(
               children: [
                 _buildHeader(context),
                 Expanded(
                   child: SingleChildScrollView(
-                    padding: const EdgeInsets.all(20),
+                    physics: const BouncingScrollPhysics(),
+                    padding: const EdgeInsets.symmetric(horizontal: 24),
                     child: Column(
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
-                        _buildTitleSection(),
-                        const SizedBox(height: 24),
-                        _buildInfoSection(),
-                        const SizedBox(height: 24),
-                        _buildConstraintSection(),
-                        if (task.rescheduleReason != null) ...[
-                          const SizedBox(height: 24),
-                          _buildRescheduleSection(),
-                        ],
+                        FadeInDown(
+                          duration: const Duration(milliseconds: 400),
+                          child: _buildMainInfo(),
+                        ),
                         const SizedBox(height: 32),
-                        _buildActionButtons(context),
+                        FadeInUp(
+                          duration: const Duration(milliseconds: 500),
+                          child: _buildDetailsGrid(),
+                        ),
+                        const SizedBox(height: 32),
+                        FadeInUp(
+                          duration: const Duration(milliseconds: 600),
+                          child: _buildConstraintSection(),
+                        ),
+                        if (task.rescheduleReason != null) ...[
+                          const SizedBox(height: 32),
+                          FadeInUp(
+                            duration: const Duration(milliseconds: 700),
+                            child: _buildRescheduleInfo(),
+                          ),
+                        ],
+                        const SizedBox(height: 48),
+                        FadeInUp(
+                          duration: const Duration(milliseconds: 800),
+                          child: _buildActionButtons(context),
+                        ),
+                        const SizedBox(height: 40),
                       ],
                     ),
                   ),
@@ -56,85 +67,102 @@ class TaskDetailScreen extends StatelessWidget {
     );
   }
 
+  Widget _buildBackgroundElements() {
+    return Stack(
+      children: [
+        Positioned(
+          top: -100,
+          left: -100,
+          child: Container(
+            width: 300,
+            height: 300,
+            decoration: BoxDecoration(
+              shape: BoxShape.circle,
+              gradient: RadialGradient(
+                colors: [AppColors.primary.withOpacity(0.15), Colors.transparent],
+              ),
+            ),
+          ),
+        ),
+      ],
+    );
+  }
+
   Widget _buildHeader(BuildContext context) {
     return Padding(
       padding: const EdgeInsets.all(16),
       child: Row(
+        mainAxisAlignment: MainAxisAlignment.spaceBetween,
         children: [
           IconButton(
             onPressed: () => Navigator.pop(context),
-            icon: const Icon(Icons.arrow_back, color: Colors.white),
-          ),
-          const Expanded(
-            child: Text(
-              'Task Details',
-              style: TextStyle(
-                color: Colors.white,
-                fontSize: 20,
-                fontWeight: FontWeight.bold,
+            icon: Container(
+              padding: const EdgeInsets.all(8),
+              decoration: BoxDecoration(
+                color: AppColors.surface,
+                borderRadius: BorderRadius.circular(12),
+                border: Border.all(color: AppColors.glassBorder),
               ),
+              child: const Icon(Icons.arrow_back_ios_new_rounded, color: Colors.white, size: 20),
             ),
           ),
-          PopupMenuButton<String>(
-            icon: const Icon(Icons.more_vert, color: Colors.white),
-            color: const Color(0xFF2D4A6F),
-            itemBuilder: (context) => [
-              const PopupMenuItem(
-                value: 'edit',
-                child: Text('Edit', style: TextStyle(color: Colors.white)),
+          Text('Details', style: AppTextStyles.heading2.copyWith(fontSize: 20)),
+          IconButton(
+            onPressed: () => _showMoreOptions(context),
+            icon: Container(
+              padding: const EdgeInsets.all(8),
+              decoration: BoxDecoration(
+                color: AppColors.surface,
+                borderRadius: BorderRadius.circular(12),
+                border: Border.all(color: AppColors.glassBorder),
               ),
-              const PopupMenuItem(
-                value: 'delete',
-                child: Text('Delete', style: TextStyle(color: Colors.red)),
-              ),
-            ],
-            onSelected: (value) {
-              if (value == 'delete') {
-                _showDeleteConfirmation(context);
-              }
-            },
+              child: const Icon(Icons.more_horiz_rounded, color: Colors.white, size: 20),
+            ),
           ),
         ],
       ),
     );
   }
 
-  Widget _buildTitleSection() {
+  Widget _buildMainInfo() {
+    final priorityColor = _getPriorityColor();
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
+        Container(
+          padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+          decoration: BoxDecoration(
+            color: priorityColor.withOpacity(0.15),
+            borderRadius: BorderRadius.circular(100),
+            border: Border.all(color: priorityColor.withOpacity(0.3)),
+          ),
+          child: Text(
+            task.priority.name.toUpperCase(),
+            style: AppTextStyles.caption.copyWith(
+              color: priorityColor,
+              fontWeight: FontWeight.bold,
+              letterSpacing: 1.5,
+            ),
+          ),
+        ),
+        const SizedBox(height: 16),
+        Text(task.title, style: AppTextStyles.heading1.copyWith(fontSize: 32)),
+        const SizedBox(height: 12),
         Row(
           children: [
+            _buildStatusBadge(),
+            const SizedBox(width: 12),
             Container(
-              width: 56,
-              height: 56,
+              padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
               decoration: BoxDecoration(
-                color: _getPriorityColor().withValues(alpha: 0.2),
-                borderRadius: BorderRadius.circular(16),
+                color: Colors.white.withOpacity(0.05),
+                borderRadius: BorderRadius.circular(8),
               ),
-              child: Icon(
-                task.isOutdoor
-                    ? Icons.directions_run_rounded
-                    : Icons.work_rounded,
-                color: _getPriorityColor(),
-                size: 28,
-              ),
-            ),
-            const SizedBox(width: 16),
-            Expanded(
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
+              child: Row(
                 children: [
-                  Text(
-                    task.title,
-                    style: const TextStyle(
-                      color: Colors.white,
-                      fontSize: 22,
-                      fontWeight: FontWeight.bold,
-                    ),
-                  ),
-                  const SizedBox(height: 4),
-                  _buildStatusBadge(),
+                  const Icon(Icons.timer_outlined, size: 14, color: AppColors.textSecondary),
+                  const SizedBox(width: 4),
+                  Text('${task.duration} Min', style: AppTextStyles.caption),
                 ],
               ),
             ),
@@ -152,128 +180,99 @@ class TaskDetailScreen extends StatelessWidget {
       case TaskStatus.completed:
         color = AppColors.success;
         text = 'Completed';
-        icon = Icons.check_circle;
+        icon = Icons.check_circle_rounded;
         break;
       case TaskStatus.scheduled:
         color = AppColors.primary;
         text = 'Scheduled';
-        icon = Icons.schedule;
+        icon = Icons.schedule_rounded;
         break;
       case TaskStatus.rescheduled:
         color = AppColors.warning;
         text = 'Rescheduled';
-        icon = Icons.sync_alt;
+        icon = Icons.sync_alt_rounded;
         break;
       default:
-        color = Colors.grey;
+        color = AppColors.textMuted;
         text = 'Pending';
-        icon = Icons.pending;
+        icon = Icons.pending_rounded;
     }
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
       decoration: BoxDecoration(
-        color: color.withValues(alpha: 0.2),
+        color: color.withOpacity(0.15),
         borderRadius: BorderRadius.circular(8),
+        border: Border.all(color: color.withOpacity(0.3)),
       ),
       child: Row(
         mainAxisSize: MainAxisSize.min,
         children: [
           Icon(icon, size: 14, color: color),
-          const SizedBox(width: 4),
+          const SizedBox(width: 6),
           Text(
             text,
-            style: TextStyle(
-              color: color,
-              fontSize: 12,
-              fontWeight: FontWeight.w600,
-            ),
+            style: AppTextStyles.caption.copyWith(color: color, fontWeight: FontWeight.bold),
           ),
         ],
       ),
     );
   }
 
-  Widget _buildInfoSection() {
+  Widget _buildDetailsGrid() {
     return Container(
-      padding: const EdgeInsets.all(20),
       decoration: BoxDecoration(
-        color: Colors.white.withValues(alpha: 0.1),
-        borderRadius: BorderRadius.circular(16),
+        color: AppColors.surface,
+        borderRadius: BorderRadius.circular(24),
+        border: Border.all(color: AppColors.glassBorder),
       ),
       child: Column(
         children: [
-          _buildInfoRow(
-            Icons.access_time_rounded,
-            'Duration',
-            '${task.duration} menit',
-          ),
-          const Divider(color: Colors.white24, height: 24),
-          _buildInfoRow(Icons.flag_rounded, 'Priority', _getPriorityText()),
-          const Divider(color: Colors.white24, height: 24),
-          _buildInfoRow(
-            Icons.wb_sunny_rounded,
-            'Type',
-            task.isOutdoor ? 'Outdoor' : 'Indoor',
-          ),
-          if (task.scheduledTime != null) ...[
-            const Divider(color: Colors.white24, height: 24),
-            _buildInfoRow(
-              Icons.schedule_rounded,
-              'Scheduled',
-              _formatDateTime(task.scheduledTime!),
-            ),
-          ],
-          if (task.deadline != null) ...[
-            const Divider(color: Colors.white24, height: 24),
-            _buildInfoRow(
-              Icons.event_rounded,
-              'Deadline',
-              _formatDateTime(task.deadline!),
-            ),
-          ],
-          if (task.location != null && task.location!.isNotEmpty) ...[
-            const Divider(color: Colors.white24, height: 24),
-            _buildInfoRow(
-              Icons.location_on_rounded,
-              'Location',
-              task.location!,
-            ),
-          ],
-          if (task.destination != null && task.destination!.isNotEmpty) ...[
-            const Divider(color: Colors.white24, height: 24),
-            _buildInfoRow(
-              Icons.directions_rounded,
-              'Destination',
-              task.destination!,
-            ),
-          ],
+          if (task.scheduledTime != null)
+            _buildDetailTile(Icons.calendar_today_rounded, 'Date & Time', 
+                '${task.scheduledTime!.day}/${task.scheduledTime!.month}/${task.scheduledTime!.year} • ${_formatTime(task.scheduledTime!)}'),
+          if (task.deadline != null)
+            _buildDetailTile(Icons.event_note_rounded, 'Deadline', 
+                '${task.deadline!.day}/${task.deadline!.month}/${task.deadline!.year}'),
+          if (task.location != null)
+            _buildDetailTile(Icons.location_on_rounded, 'Location', task.location!),
+          if (task.destination != null)
+            _buildDetailTile(Icons.directions_rounded, 'Destination', task.destination!),
+          _buildDetailTile(Icons.wb_sunny_rounded, 'Activity Environment', 
+              task.isOutdoor ? 'Outdoor Activity' : 'Indoor Activity', isLast: true),
         ],
       ),
     );
   }
 
-  Widget _buildInfoRow(IconData icon, String label, String value) {
-    return Row(
-      children: [
-        Icon(icon, size: 20, color: Colors.white70),
-        const SizedBox(width: 12),
-        Text(
-          label,
-          style: TextStyle(
-            color: Colors.white.withValues(alpha: 0.7),
-            fontSize: 14,
+  Widget _buildDetailTile(IconData icon, String label, String value, {bool isLast = false}) {
+    return Container(
+      padding: const EdgeInsets.all(20),
+      decoration: BoxDecoration(
+        border: isLast ? null : Border(bottom: BorderSide(color: Colors.white.withOpacity(0.05))),
+      ),
+      child: Row(
+        children: [
+          Container(
+            padding: const EdgeInsets.all(10),
+            decoration: BoxDecoration(
+              color: AppColors.primary.withOpacity(0.1),
+              borderRadius: BorderRadius.circular(12),
+            ),
+            child: Icon(icon, size: 20, color: AppColors.primary),
           ),
-        ),
-        const Spacer(),
-        Text(
-          value,
-          style: const TextStyle(
-            color: Colors.white,
-            fontSize: 14,
-            fontWeight: FontWeight.w500,
+          const SizedBox(width: 16),
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(label, style: AppTextStyles.caption.copyWith(color: AppColors.textMuted)),
+                const SizedBox(height: 2),
+                Text(value, style: AppTextStyles.body.copyWith(fontWeight: FontWeight.w500)),
+              ],
+            ),
           ),
-        ),
-      ],
+        ],
+      ),
     );
   }
 
@@ -281,148 +280,94 @@ class TaskDetailScreen extends StatelessWidget {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        const Text(
-          'Constraints',
-          style: TextStyle(
-            color: Colors.white,
-            fontSize: 18,
-            fontWeight: FontWeight.bold,
-          ),
-        ),
-        const SizedBox(height: 12),
-        Container(
-          padding: const EdgeInsets.all(16),
-          decoration: BoxDecoration(
-            color: Colors.white.withValues(alpha: 0.1),
-            borderRadius: BorderRadius.circular(12),
-          ),
-          child: Column(
-            children: [
-              _buildConstraintRow(
-                Icons.cloud_rounded,
-                'Weather Constraint',
-                _getWeatherConstraintText(),
-                _getWeatherConstraintColor(),
-              ),
-              const SizedBox(height: 12),
-              _buildConstraintRow(
-                Icons.traffic_rounded,
-                'Traffic Constraint',
-                _getTrafficConstraintText(),
-                _getTrafficConstraintColor(),
-              ),
-            ],
-          ),
+        Text('Constraints', style: AppTextStyles.heading2.copyWith(fontSize: 18)),
+        const SizedBox(height: 16),
+        Row(
+          children: [
+            _buildConstraintCard(Icons.cloud_rounded, 'Weather', 
+                _getWeatherConstraintText(), _getWeatherConstraintColor()),
+            const SizedBox(width: 12),
+            _buildConstraintCard(Icons.traffic_rounded, 'Traffic', 
+                _getTrafficConstraintText(), _getTrafficConstraintColor()),
+          ],
         ),
       ],
     );
   }
 
-  Widget _buildConstraintRow(
-    IconData icon,
-    String label,
-    String value,
-    Color color,
-  ) {
-    return Row(
-      children: [
-        Container(
-          padding: const EdgeInsets.all(8),
-          decoration: BoxDecoration(
-            color: color.withValues(alpha: 0.2),
-            borderRadius: BorderRadius.circular(8),
-          ),
-          child: Icon(icon, size: 16, color: color),
+  Widget _buildConstraintCard(IconData icon, String label, String value, Color color) {
+    return Expanded(
+      child: Container(
+        padding: const EdgeInsets.all(16),
+        decoration: BoxDecoration(
+          color: AppColors.surface,
+          borderRadius: BorderRadius.circular(20),
+          border: Border.all(color: AppColors.glassBorder),
         ),
-        const SizedBox(width: 12),
-        Expanded(
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              Text(
-                label,
-                style: TextStyle(
-                  color: Colors.white.withValues(alpha: 0.6),
-                  fontSize: 12,
-                ),
-              ),
-              Text(
-                value,
-                style: TextStyle(
-                  color: color,
-                  fontSize: 14,
-                  fontWeight: FontWeight.w500,
-                ),
-              ),
-            ],
-          ),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Icon(icon, size: 24, color: color),
+            const SizedBox(height: 12),
+            Text(label, style: AppTextStyles.caption.copyWith(color: AppColors.textMuted)),
+            const SizedBox(height: 4),
+            Text(value, style: AppTextStyles.body.copyWith(fontSize: 13, fontWeight: FontWeight.bold, color: color)),
+          ],
         ),
-      ],
+      ),
     );
   }
 
-  Widget _buildRescheduleSection() {
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        const Text(
-          'Reschedule Info',
-          style: TextStyle(
-            color: Colors.white,
-            fontSize: 18,
-            fontWeight: FontWeight.bold,
+  Widget _buildRescheduleInfo() {
+    return Container(
+      padding: const EdgeInsets.all(20),
+      decoration: BoxDecoration(
+        color: AppColors.warning.withOpacity(0.1),
+        borderRadius: BorderRadius.circular(20),
+        border: Border.all(color: AppColors.warning.withOpacity(0.3)),
+      ),
+      child: Row(
+        children: [
+          const Icon(Icons.info_outline_rounded, color: AppColors.warning),
+          const SizedBox(width: 16),
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text('Reschedule Reason', 
+                    style: AppTextStyles.caption.copyWith(color: AppColors.warning, fontWeight: FontWeight.bold)),
+                const SizedBox(height: 4),
+                Text(task.rescheduleReason!, style: AppTextStyles.body.copyWith(fontSize: 14)),
+              ],
+            ),
           ),
-        ),
-        const SizedBox(height: 12),
-        Container(
-          padding: const EdgeInsets.all(16),
-          decoration: BoxDecoration(
-            color: AppColors.warning.withValues(alpha: 0.15),
-            borderRadius: BorderRadius.circular(12),
-            border: Border.all(color: AppColors.warning.withValues(alpha: 0.3)),
-          ),
-          child: Row(
-            children: [
-              const Icon(
-                Icons.sync_alt_rounded,
-                color: AppColors.warning,
-                size: 24,
-              ),
-              const SizedBox(width: 12),
-              Expanded(
-                child: Text(
-                  task.rescheduleReason!,
-                  style: const TextStyle(color: Colors.white, fontSize: 14),
-                ),
-              ),
-            ],
-          ),
-        ),
-      ],
+        ],
+      ),
     );
   }
 
   Widget _buildActionButtons(BuildContext context) {
+    final isCompleted = task.status == TaskStatus.completed;
     return Row(
       children: [
         Expanded(
-          child: ElevatedButton.icon(
+          child: ElevatedButton(
             onPressed: () => _toggleComplete(context),
-            icon: Icon(
-              task.status == TaskStatus.completed ? Icons.undo : Icons.check,
-            ),
-            label: Text(
-              task.status == TaskStatus.completed ? 'Undo' : 'Complete',
-            ),
             style: ElevatedButton.styleFrom(
-              backgroundColor: task.status == TaskStatus.completed
-                  ? Colors.grey
-                  : AppColors.success,
-              foregroundColor: Colors.white,
-              padding: const EdgeInsets.symmetric(vertical: 16),
-              shape: RoundedRectangleBorder(
-                borderRadius: BorderRadius.circular(12),
-              ),
+              backgroundColor: isCompleted ? Colors.white.withOpacity(0.1) : AppColors.success,
+              foregroundColor: isCompleted ? Colors.white : Colors.white,
+              padding: const EdgeInsets.symmetric(vertical: 18),
+              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(18)),
+              elevation: 0,
+            ),
+            child: Row(
+              mainAxisAlignment: MainAxisAlignment.center,
+              children: [
+                Icon(isCompleted ? Icons.undo_rounded : Icons.check_circle_outline_rounded),
+                const SizedBox(width: 12),
+                Text(isCompleted ? 'Mark as Pending' : 'Mark Completed', 
+                    style: AppTextStyles.button.copyWith(fontSize: 16)),
+              ],
             ),
           ),
         ),
@@ -432,100 +377,87 @@ class TaskDetailScreen extends StatelessWidget {
 
   Color _getPriorityColor() {
     switch (task.priority) {
-      case Priority.high:
-        return AppColors.danger;
-      case Priority.medium:
-        return AppColors.warning;
-      case Priority.low:
-        return AppColors.secondary;
-    }
-  }
-
-  String _getPriorityText() {
-    switch (task.priority) {
-      case Priority.high:
-        return 'High';
-      case Priority.medium:
-        return 'Medium';
-      case Priority.low:
-        return 'Low';
+      case Priority.high: return AppColors.danger;
+      case Priority.medium: return AppColors.warning;
+      case Priority.low: return AppColors.success;
     }
   }
 
   String _getWeatherConstraintText() {
-    switch (task.weatherConstraint) {
-      case WeatherConstraint.noPreference:
-        return 'No Preference';
-      case WeatherConstraint.noRain:
-        return 'No Rain';
-      case WeatherConstraint.noExtremeHeat:
-        return 'No Extreme Heat';
-      case WeatherConstraint.noStorm:
-        return 'No Storm';
-    }
+    return task.weatherConstraint.toString().split('.').last;
   }
 
   Color _getWeatherConstraintColor() {
-    switch (task.weatherConstraint) {
-      case WeatherConstraint.noPreference:
-        return Colors.grey;
-      case WeatherConstraint.noRain:
-        return Colors.blue;
-      case WeatherConstraint.noExtremeHeat:
-        return Colors.orange;
-      case WeatherConstraint.noStorm:
-        return Colors.purple;
-    }
+    if (task.weatherConstraint == WeatherConstraint.noPreference) return AppColors.textSecondary;
+    return AppColors.primary;
   }
 
   String _getTrafficConstraintText() {
-    switch (task.trafficConstraint) {
-      case TrafficConstraint.noPreference:
-        return 'No Preference';
-      case TrafficConstraint.rescheduleIfTrafficHeavy:
-        return 'Reschedule if Heavy';
-      case TrafficConstraint.switchToZoom:
-        return 'Switch to Zoom';
-    }
+    return task.trafficConstraint.toString().split('.').last;
   }
 
   Color _getTrafficConstraintColor() {
-    switch (task.trafficConstraint) {
-      case TrafficConstraint.noPreference:
-        return Colors.grey;
-      case TrafficConstraint.rescheduleIfTrafficHeavy:
-        return Colors.orange;
-      case TrafficConstraint.switchToZoom:
-        return Colors.green;
-    }
+    if (task.trafficConstraint == TrafficConstraint.noPreference) return AppColors.textSecondary;
+    return AppColors.accent;
   }
 
-  String _formatDateTime(DateTime dt) {
-    return '${dt.day}/${dt.month}/${dt.year} ${dt.hour.toString().padLeft(2, '0')}:${dt.minute.toString().padLeft(2, '0')}';
+  String _formatTime(DateTime dt) {
+    return '${dt.hour.toString().padLeft(2, '0')}:${dt.minute.toString().padLeft(2, '0')}';
+  }
+
+  void _showMoreOptions(BuildContext context) {
+    showModalBottomSheet(
+      context: context,
+      backgroundColor: Colors.transparent,
+      builder: (context) => Container(
+        padding: const EdgeInsets.all(24),
+        decoration: BoxDecoration(
+          color: AppColors.background,
+          borderRadius: const BorderRadius.vertical(top: Radius.circular(32)),
+          border: Border.all(color: AppColors.glassBorder),
+        ),
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            _buildOptionTile(Icons.edit_rounded, 'Edit Task', () {
+              Navigator.pop(context);
+              // TODO: Navigate to edit
+            }),
+            _buildOptionTile(Icons.delete_outline_rounded, 'Delete Task', () {
+              Navigator.pop(context);
+              _showDeleteConfirmation(context);
+            }, isDestructive: true),
+            const SizedBox(height: 20),
+          ],
+        ),
+      ),
+    );
+  }
+
+  Widget _buildOptionTile(IconData icon, String label, VoidCallback onTap, {bool isDestructive = false}) {
+    return ListTile(
+      leading: Icon(icon, color: isDestructive ? AppColors.danger : Colors.white),
+      title: Text(label, style: AppTextStyles.body.copyWith(color: isDestructive ? AppColors.danger : Colors.white)),
+      onTap: onTap,
+    );
   }
 
   void _showDeleteConfirmation(BuildContext context) {
     showDialog(
       context: context,
       builder: (context) => AlertDialog(
-        backgroundColor: const Color(0xFF2D4A6F),
-        title: const Text('Delete Task', style: TextStyle(color: Colors.white)),
-        content: const Text(
-          'Are you sure you want to delete this task?',
-          style: TextStyle(color: Colors.white70),
-        ),
+        backgroundColor: AppColors.surface,
+        title: const Text('Delete Task'),
+        content: const Text('Are you sure you want to delete this task? This action cannot be undone.'),
         actions: [
-          TextButton(
-            onPressed: () => Navigator.pop(context),
-            child: const Text('Cancel'),
-          ),
+          TextButton(onPressed: () => Navigator.pop(context), child: const Text('Cancel')),
           TextButton(
             onPressed: () {
               context.read<AppProvider>().deleteTask(task.id);
               Navigator.pop(context);
               Navigator.pop(context);
             },
-            child: const Text('Delete', style: TextStyle(color: Colors.red)),
+            child: const Text('Delete', style: TextStyle(color: AppColors.danger)),
           ),
         ],
       ),
@@ -533,10 +465,9 @@ class TaskDetailScreen extends StatelessWidget {
   }
 
   void _toggleComplete(BuildContext context) {
-    final newStatus = task.status == TaskStatus.completed
-        ? TaskStatus.pending
-        : TaskStatus.completed;
-    context.read<AppProvider>().updateTask(task.copyWith(status: newStatus));
+    final provider = context.read<AppProvider>();
+    final newStatus = task.status == TaskStatus.completed ? TaskStatus.pending : TaskStatus.completed;
+    provider.updateTask(task.copyWith(status: newStatus));
     Navigator.pop(context);
   }
 }
